@@ -5,8 +5,12 @@ services:
       - "8000:8000"
     environment:
       LEDGER_DB_PATH: /data/ledger.db
-      # /leaderboard/page 游标的 HMAC 签名密钥，生产环境务必覆盖为强随机值
-      LEADERBOARD_CURSOR_SECRET: ${LEADERBOARD_CURSOR_SECRET:-dev-only-insecure-cursor-secret}
+      # /leaderboard/page 游标的 HMAC 签名密钥。留空（不配置）时，服务
+      # 首次启动会在 /data 卷中一次性生成随机密钥（cursor_secret），
+      # 多进程并发启动共享同一份，重启后续读旧游标仍然有效。
+      # 需要自行掌控或轮换密钥时覆盖为强随机值，如 openssl rand -hex 32；
+      # 覆盖/轮换会令覆盖前签发的旧游标失效（续读返回 422）。
+      LEADERBOARD_CURSOR_SECRET: ${LEADERBOARD_CURSOR_SECRET:-}
     volumes:
       - ledger-data:/data
     restart: unless-stopped

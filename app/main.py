@@ -6,6 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, FastAPI, Path, Query, Response, status
 
 from . import ledger
+from .cursor import init_cursor_secret
 from .db import init_db
 from .routing import EncodedPathRoute
 from .schemas import (
@@ -31,6 +32,10 @@ from .schemas import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Resolve the HMAC cursor secret before serving: an explicit env
+    # value wins, otherwise a persisted random secret in the data dir is
+    # loaded/generated. Any failure aborts startup (no fixed fallback).
+    init_cursor_secret()
     init_db()
     yield
 
