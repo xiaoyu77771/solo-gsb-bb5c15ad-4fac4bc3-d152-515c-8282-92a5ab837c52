@@ -22,6 +22,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(db_module, "DB_PATH", str(tmp_path / "page-test.db"))
     monkeypatch.setenv(cursor_mod.CURSOR_SECRET_ENV, SECRET)
     db_module.init_db()
+    cursor_mod.init_cursor_secret()
     return TestClient(app)
 
 
@@ -208,7 +209,9 @@ def test_tampered_cursor_422(client):
 def test_cursor_signed_with_other_secret_422(client, monkeypatch):
     _seed(client, {"alice": 10, "bob": 7})
     cursor = client.get("/leaderboard/page", params={"limit": 1}).json()["next_cursor"]
+    # rotating the secret (restart with a different value) invalidates old cursors
     monkeypatch.setenv(cursor_mod.CURSOR_SECRET_ENV, "another-secret")
+    cursor_mod.init_cursor_secret()
     assert client.get("/leaderboard/page", params={"cursor": cursor}).status_code == 422
 
 

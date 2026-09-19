@@ -6,6 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, FastAPI, Path, Query, Response, status
 
 from . import ledger
+from .cursor import init_cursor_secret
 from .db import init_db
 from .routing import EncodedPathRoute
 from .schemas import (
@@ -32,6 +33,10 @@ from .schemas import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    # Resolve the cursor signing secret before serving: an unreadable or
+    # uncreatable secret file aborts startup instead of falling back to a
+    # guessable key (see app/cursor.py).
+    init_cursor_secret()
     yield
 
 
